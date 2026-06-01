@@ -74,7 +74,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen> {
             // 2. Bảng chi tiết tính toán (Bắt chước Image 2)
             _buildDetailedPriceTable(bill),
             
-            const SizedBox(height: 30),
+            const SizedBox(height: 80), // Thêm khoảng trống để không bị nút FAB che khuất
           ],
         ),
       ),
