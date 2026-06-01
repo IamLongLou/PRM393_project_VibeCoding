@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/customer/customer_list_screen.dart';
+import '../screens/sync/sync_screen.dart';
+import '../screens/history/history_screen.dart';
+import '../screens/profile/profile_screen.dart';
 
 class AppRoutes extends StatelessWidget {
   const AppRoutes({super.key});
@@ -18,6 +21,9 @@ class AppRoutes extends StatelessWidget {
         "/login": (context) => const LoginScreen(),
         "/home": (context) => const HomeScreen(),
         "/customer-list": (context) => const CustomerListScreen(),
+        "/sync": (context) => const SyncScreen(),
+        "/history": (context) => const HistoryScreen(),
+        "/profile": (context) => const ProfileScreen(),
       },
     );
   }

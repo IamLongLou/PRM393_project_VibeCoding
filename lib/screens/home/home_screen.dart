@@ -35,21 +35,27 @@ class HomeScreen extends StatelessWidget {
               context,
               "Sync",
               Icons.sync,
-              () {},
+              () {
+                Navigator.pushNamed(context, "/sync");
+              },
             ),
 
             menuCard(
               context,
               "History",
               Icons.history,
-              () {},
+              () {
+                Navigator.pushNamed(context, "/history");
+              },
             ),
 
             menuCard(
               context,
               "Profile",
               Icons.person,
-              () {},
+              () {
+                Navigator.pushNamed(context, "/profile");
+              },
             ),
           ],
         ),
@@ -63,17 +69,21 @@ class HomeScreen extends StatelessWidget {
       IconData icon,
       VoidCallback onTap,
       ) {
-
-    return InkWell(
-      onTap: onTap,
-      child: Card(
-        elevation: 4,
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 50),
-            SizedBox(height: 10),
-            Text(title),
+            Icon(icon, size: 50, color: Theme.of(context).primaryColor),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
