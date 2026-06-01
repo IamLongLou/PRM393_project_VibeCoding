@@ -71,12 +71,25 @@ class CustomerHistoryScreen extends StatelessWidget {
           // Tên khách hàng
           Padding(
             padding: const EdgeInsets.all(12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                const Text("Khách hàng", style: TextStyle(fontSize: 16)),
-                Text(customer.name, 
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF007BC3))),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Khách hàng", style: TextStyle(fontSize: 16)),
+                    Text(customer.name, 
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF007BC3))),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Mã hóa đơn", style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    Text("HD${bill.id}", 
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  ],
+                ),
               ],
             ),
           ),
