@@ -94,15 +94,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     return;
                   }
 
-                  final newCustomer = Customer(
-                    code: _codeController.text,
-                    name: _nameController.text,
-                    address: _addressController.text,
-                    oldReading: int.tryParse(_readingController.text) ?? 0,
-                    status: CollectionStatus.pending,
-                  );
+                  // final newCustomer = Customer(
+                  //   code: _codeController.text,
+                  //   name: _nameController.text,
+                  //   address: _addressController.text,
+                  //   oldReading: int.tryParse(_readingController.text) ?? 0,
+                  //   status: CollectionStatus.pending,
+                  // );
 
-                  await CustomerService.addCustomer(newCustomer);
+                  // await CustomerService.addCustomer(newCustomer);
                   if (mounted) Navigator.pop(context, true);
                 },
                 style: ElevatedButton.styleFrom(

@@ -32,6 +32,11 @@ class Customer {
   }
 
   factory Customer.fromMap(Map<String, dynamic> map) {
+    final rawStatus = map['status'] ?? 0;
+    final int statusIndex = rawStatus is String
+        ? CollectionStatus.values.indexWhere((s) => s.name.toLowerCase() == rawStatus.toLowerCase())
+        : rawStatus;
+
     return Customer(
       id: map['id'],
       code: map['code'] ?? '',
@@ -39,7 +44,7 @@ class Customer {
       address: map['address'] ?? '',
       phone: map['phone'] ?? '',
       currentReading: map['currentReading'] ?? 0,
-      status: CollectionStatus.values[map['status'] ?? 0],
+      status: CollectionStatus.values[statusIndex < 0 ? 0 : statusIndex],
     );
   }
 

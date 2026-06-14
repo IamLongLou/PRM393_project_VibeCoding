@@ -54,6 +54,7 @@ class Bill {
   }
 
   factory Bill.fromMap(Map<String, dynamic> map) {
+    final rawSynced = map['isSynced'];
     return Bill(
       id: map['id'],
       customerId: map['customerId'],
@@ -69,7 +70,7 @@ class Bill {
       vat: map['vat'].toDouble(),
       totalAmount: map['totalAmount'].toDouble(),
       imagePath: map['imagePath'],
-      isSynced: map['isSynced'] == 1,
+      isSynced: rawSynced == true || rawSynced == 1,
     );
   }
 

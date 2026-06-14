@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/customer.dart';
 import '../models/bill.dart';
+import '../models/user.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -21,171 +22,221 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
   }
 
-  Future _createDB(Database db, int version) async {
-    const String idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-    const String textType = 'TEXT NOT NULL';
-    const String intType = 'INTEGER NOT NULL';
-    const String realType = 'REAL NOT NULL';
-    const String nullableText = 'TEXT';
-
+  Future<void> _createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE customers (
-        id $idType,
-        code $textType,
-        name $textType,
-        address $textType,
-        phone $textType,
-        currentReading $intType,
-        status $intType
+        id INTEGER PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        currentReading INTEGER NOT NULL,
+        status INTEGER NOT NULL
       )
     ''');
 
     await db.execute('''
       CREATE TABLE bills (
-        id $idType,
-        customerId $intType,
-        billCode $textType,
-        date $textType,
-        oldReading $intType,
-        newReading $intType,
-        consumption $realType,
-        unitPrice $realType,
-        amount $realType,
-        vat $realType,
-        totalAmount $realType,
-        imagePath $nullableText,
-        isSynced $intType,
+        id INTEGER PRIMARY KEY,
+        customerId INTEGER NOT NULL,
+        customerName TEXT,
+        customerCode TEXT,
+        billCode TEXT NOT NULL UNIQUE,
+        date TEXT NOT NULL,
+        oldReading INTEGER NOT NULL,
+        newReading INTEGER NOT NULL,
+        consumption REAL NOT NULL,
+        unitPrice REAL NOT NULL,
+        amount REAL NOT NULL,
+        vat REAL NOT NULL,
+        totalAmount REAL NOT NULL,
+        imagePath TEXT,
+        isSynced INTEGER NOT NULL,
         FOREIGN KEY (customerId) REFERENCES customers (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE user_session (
+        username TEXT PRIMARY KEY,
+        fullName TEXT NOT NULL,
+        role TEXT NOT NULL,
+        email TEXT,
+        phone TEXT,
+        token TEXT,
+        lastLoginAt TEXT NOT NULL
       )
     ''');
 
     await _seedDatabase(db);
   }
 
-  Future _seedDatabase(Database db) async {
-    // 20 Sample Customers
-    final List<Map<String, dynamic>> customers = List.generate(20, (i) {
-      return {
-        'code': 'KH${(1234 + i).toString().padLeft(4, '0')}',
-        'name': 'Nguyễn Văn ${String.fromCharCode(65 + i)}',
-        'address': '${123 + i} Đường ABC, Quận ${(i % 12) + 1}',
-        'phone': '09012345${i.toString().padLeft(2, '0')}',
-        'currentReading': 100 + (i * 10),
-        'status': i < 10 ? 0 : 2, // First 10 pending, last 10 completed
-      };
-    });
-
-    for (var customer in customers) {
-      await db.insert('customers', customer);
-    }
-
-    // 6 months history for each customer (some might only have a few)
-    // And 10 pending sync records
-    for (int i = 1; i <= 20; i++) {
-      for (int m = 1; m <= 6; m++) {
-        bool isPending = (i <= 10 && m == 6); // Latest month for first 10 is pending sync
-        
-        int oldR = 100 + (i * 10) + (m - 1) * 15;
-        int newR = oldR + 15 + (i % 5);
-        double consumption = (newR - oldR).toDouble();
-        double unitPrice = 12000.0;
-        double amount = consumption * unitPrice;
-        double vat = amount * 0.1;
-        double total = amount + vat;
-
-        await db.insert('bills', {
-          'customerId': i,
-          'billCode': 'HD2024${m.toString().padLeft(2, '0')}${i.toString().padLeft(4, '0')}',
-          'date': DateTime(2024, m, 15).toIso8601String(),
-          'oldReading': oldR,
-          'newReading': newR,
-          'consumption': consumption,
-          'unitPrice': unitPrice,
-          'amount': amount,
-          'vat': vat,
-          'totalAmount': total,
-          'imagePath': null,
-          'isSynced': isPending ? 0 : 1,
-        });
-      }
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _addColumnIfMissing(db, 'bills', 'customerName', 'TEXT');
+      await _addColumnIfMissing(db, 'bills', 'customerCode', 'TEXT');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS user_session (
+          username TEXT PRIMARY KEY,
+          fullName TEXT NOT NULL,
+          role TEXT NOT NULL,
+          email TEXT,
+          phone TEXT,
+          token TEXT,
+          lastLoginAt TEXT NOT NULL
+        )
+      ''');
     }
   }
 
-  // Customer Methods
+  Future<void> _addColumnIfMissing(Database db, String table, String column, String type) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table)');
+    final exists = columns.any((c) => c['name'] == column);
+    if (!exists) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $type');
+    }
+  }
+
+  Future<void> _seedDatabase(Database db) async {
+    final customers = [
+      Customer(id: 1, code: 'KH001', name: 'Lưu Bị', address: '12-A Phố Huế, Hai Bà Trưng, Hà Nội', phone: '0912345001', currentReading: 125),
+      Customer(id: 2, code: 'KH002', name: 'Quan Vũ', address: '88 Đường Láng, Đống Đa, Hà Nội', phone: '0987654002', currentReading: 80),
+      Customer(id: 3, code: 'KH003', name: 'Trương Phi', address: '15/2 Trần Duy Hưng, Cầu Giấy, Hà Nội', phone: '0904444003', currentReading: 210, status: CollectionStatus.completed),
+      Customer(id: 4, code: 'KH004', name: 'Gia Cát Lượng', address: 'Lạch Tray, Ngô Quyền, Hải Phòng', phone: '0911222004', currentReading: 45, status: CollectionStatus.reading),
+      Customer(id: 5, code: 'KH005', name: 'Tào Tháo', address: 'Trần Hưng Đạo, TP. Bắc Ninh', phone: '0933555005', currentReading: 320),
+    ];
+
+    for (final customer in customers) {
+      await db.insert('customers', customer.toMap(), conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+  }
+
   Future<List<Customer>> getAllCustomers() async {
-    final db = await instance.database;
-    final result = await db.query('customers');
-    return result.map((json) => Customer.fromMap(json)).toList();
+    final db = await database;
+    final result = await db.query('customers', orderBy: 'code ASC');
+    return result.map(Customer.fromMap).toList();
   }
 
   Future<Customer?> getCustomerById(int id) async {
-    final db = await instance.database;
-    final maps = await db.query(
-      'customers',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (maps.isNotEmpty) {
-      return Customer.fromMap(maps.first);
-    }
-    return null;
+    final db = await database;
+    final maps = await db.query('customers', where: 'id = ?', whereArgs: [id]);
+    return maps.isEmpty ? null : Customer.fromMap(maps.first);
+  }
+
+  Future<int> upsertCustomer(Customer customer) async {
+    final db = await database;
+    return db.insert('customers', customer.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> upsertCustomers(List<Customer> customers) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final customer in customers) {
+        await txn.insert('customers', customer.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
   }
 
   Future<int> updateCustomer(Customer customer) async {
-    final db = await instance.database;
-    return db.update(
-      'customers',
-      customer.toMap(),
-      where: 'id = ?',
-      whereArgs: [customer.id],
-    );
+    final db = await database;
+    return db.update('customers', customer.toMap(), where: 'id = ?', whereArgs: [customer.id]);
   }
 
-  // Bill Methods
+  Future<List<Customer>> searchCustomers(String query) async {
+    final db = await database;
+    if (query.isEmpty) return getAllCustomers();
+    final result = await db.query(
+      'customers',
+      where: 'LOWER(name) LIKE ? OR LOWER(code) LIKE ?',
+      whereArgs: ['%${query.toLowerCase()}%', '%${query.toLowerCase()}%'],
+      orderBy: 'code ASC',
+    );
+    return result.map(Customer.fromMap).toList();
+  }
+
   Future<List<Bill>> getBillsByCustomerId(int customerId) async {
-    final db = await instance.database;
+    final db = await database;
     final result = await db.query(
       'bills',
       where: 'customerId = ?',
       whereArgs: [customerId],
       orderBy: 'date DESC',
     );
-    return result.map((json) => Bill.fromMap(json)).toList();
+    return result.map(Bill.fromMap).toList();
   }
 
   Future<List<Bill>> getAllBills() async {
-    final db = await instance.database;
+    final db = await database;
     final result = await db.query('bills', orderBy: 'date DESC');
-    return result.map((json) => Bill.fromMap(json)).toList();
+    return result.map(Bill.fromMap).toList();
   }
 
   Future<List<Bill>> getUnsyncedBills() async {
-    final db = await instance.database;
-    final result = await db.query(
-      'bills',
-      where: 'isSynced = ?',
-      whereArgs: [0],
-    );
-    return result.map((json) => Bill.fromMap(json)).toList();
+    final db = await database;
+    final result = await db.query('bills', where: 'isSynced = ?', whereArgs: [0], orderBy: 'date DESC');
+    return result.map(Bill.fromMap).toList();
   }
 
   Future<int> insertBill(Bill bill) async {
-    final db = await instance.database;
-    return await db.insert('bills', bill.toMap());
+    final db = await database;
+    return db.insert('bills', bill.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> upsertBills(List<Bill> bills) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final bill in bills) {
+        await txn.insert('bills', bill.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
   }
 
   Future<int> updateBill(Bill bill) async {
-    final db = await instance.database;
-    return db.update(
-      'bills',
-      bill.toMap(),
-      where: 'id = ?',
-      whereArgs: [bill.id],
+    final db = await database;
+    return db.update('bills', bill.toMap(), where: 'id = ?', whereArgs: [bill.id]);
+  }
+
+  Future<void> markBillsAsSynced(List<Bill> bills) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final bill in bills) {
+        await txn.update(
+          'bills',
+          {'isSynced': 1},
+          where: bill.id != null ? 'id = ?' : 'billCode = ?',
+          whereArgs: [bill.id ?? bill.billCode],
+        );
+      }
+    });
+  }
+
+  Future<void> saveSession(User user, String? token) async {
+    final db = await database;
+    await db.insert(
+      'user_session',
+      {
+        ...user.toMap(),
+        'token': token,
+        'lastLoginAt': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<User?> getLastSession() async {
+    final db = await database;
+    final rows = await db.query('user_session', orderBy: 'lastLoginAt DESC', limit: 1);
+    return rows.isEmpty ? null : User.fromMap(rows.first);
+  }
+
+  Future<void> clearSession() async {
+    final db = await database;
+    await db.delete('user_session');
   }
 }

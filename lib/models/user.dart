@@ -13,6 +13,26 @@ class User {
     this.phone,
   });
 
+  Map<String, dynamic> toMap() {
+    return {
+      'username': username,
+      'fullName': fullName,
+      'role': role,
+      'email': email,
+      'phone': phone,
+    };
+  }
+
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      username: map['username'] ?? '',
+      fullName: map['fullName'] ?? '',
+      role: map['role'] ?? 'user',
+      email: map['email'],
+      phone: map['phone'],
+    );
+  }
+
   User copyWith({
     String? username,
     String? fullName,

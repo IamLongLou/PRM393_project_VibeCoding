@@ -106,7 +106,7 @@ class _EditCustomerScreenState extends State<EditCustomerScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      await CustomerService.updateCustomer(widget.customer.id!, _nameController.text, _addressController.text);
+                      // await CustomerService.updateCustomer(widget.customer.id!, _nameController.text, _addressController.text);
                       if (mounted) Navigator.pop(context, true);
                     },
                     style: ElevatedButton.styleFrom(
